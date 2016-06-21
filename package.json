@@ -1,0 +1,36 @@
+{
+  "name": "xn",
+  "version": "0.0.1",
+  "description": "create axon powered client/server rpcs",
+  "license": "MIT",
+  "author": {
+    "name": "yaniv kessler",
+    "email": "yanivk@gmail.com"
+  },
+  "scripts": {
+    "test": "mocha test/**/*.js"
+  },
+  "dependencies": {
+    "debug": "^2.2.0",
+    "semver": "^5.1.0"
+  },
+  "devDependencies": {
+    "axon": "^2.0.2",
+    "chai": "^3.5.0",
+    "mocha": "~2.5.3"
+  },
+  "keywords": [
+    "axon",
+    "rpc",
+    "zeromq",
+    "microservices",
+    "micro-services",
+    "microservice",
+    "micro-service",
+    "engine"
+  ],
+  "engines": {
+    "node": ">=4.0.0",
+    "npm": ">=2.0.0"
+  }
+}
