@@ -2,7 +2,7 @@
 
 **a distilled engine for creating RPC Servers/Clients**
 
-- Quickly expose any kind of async api, including whole modules
+- Wxpose any kind of async api, including whole modules, remotely
 - Use any kind of transport layer that supports request/response semantics
 - Expose different versions of the same api using semver
 
@@ -17,6 +17,7 @@
 npm init
 npm i --save axon
 ```
+
 ```js
 const xn = require('xn')
 const axon = require('axon')
