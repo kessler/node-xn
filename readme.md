@@ -1,6 +1,10 @@
 # xn
 
-**a distilled engine for creating RPCs**
+**a distilled engine for creating RPC Servers/Clients**
+
+- Quickly expose any kind of async api, including whole modules
+- Use any kind of transport layer that supports request/response semantics
+- Expose different versions of the same api using semver
 
 [![npm status](http://img.shields.io/npm/v/xn.svg?style=flat-square)](https://www.npmjs.org/package/xn) 
 
@@ -17,21 +21,48 @@ npm i --save axon
 const xn = require('xn')
 const axon = require('axon')
 
-let server = new xn.Server()
-let serverSocket = axon.socket('rep')
+// create the rpc server
+let server = new xn.RpcServer()           
+server.addModule('fs')
 
-serverSocket.bind(3000)
+// create the axon sockets
+let rep = axon.socket('rep')
+let req = axon.socket('req')
 
-serverSocket.on('message', (message, reply) => {
+rep.bind(3000)
+req.connect(3000)
+
+rep.on('message', (message, reply) => {
     server.dispatch(message, reply)
 })
 
-server.addModule('fs')
+// create the rpc client
+let client = new xn.RpcClient({
+    send: (message, cb) => {
+        server.dispatch(message, (err, result) => {
+            req.send(message, cb)
+        })
+    }
+})
+
+client.refresh((err) => {
+    if (err) return done(err)
+
+    client.rpc.fs.writeFile(filename, 'test', (err) => {
+        if (err) return done(err)
+
+        expect(fs.readFileSync(filename, 'utf8')).to.equal('test')
+        done()
+    })
+})
 ```
+For further examples see [this test](/test/integration.test.js)
 
 ## api
 
-### `main(arg[,opts])`
+[//]: # (start marker for auto doc)
+
+[//]: # (end marker for auto doc)
 
 ## license
 
