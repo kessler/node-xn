@@ -32,14 +32,14 @@ rep.bind(3000)
 req.connect(3000)
 
 rep.on('message', (message, reply) => {
-    server.dispatch(message, reply)
+    server.dispatch(message, reply) // integrate xn server with axon
 })
 
 // create the rpc client
 let client = new xn.RpcClient({
     send: (message, cb) => {
         server.dispatch(message, (err, result) => {
-            req.send(message, cb)
+            req.send(message, cb) // integrate xn client with axon
         })
     }
 })
