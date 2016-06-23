@@ -10,12 +10,10 @@
 
 ## example
 
-`npm i xn`
-
 ### expose core filesystem module using axon
 ```
 npm init
-npm i --save axon
+npm i --save xn axon
 ```
 
 ```js
