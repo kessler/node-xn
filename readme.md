@@ -58,7 +58,8 @@ client.refresh((err) => {
 })
 
 // it is possible to skip the refresh() stage and send an api call immediately:
-client.sendApiMethodCall('fs', '*', 'writeFile', ['test', 'test'], (err) => { console.log(err ? err : 'success' )})
+client.sendApiMethodCall('fs', '*', 'writeFile', ['test', 'test']
+                                        , (err) => { console.log(err ? err : 'success' )})
 ```
 For further examples see [this test](/test/integration.test.js)
 
