@@ -2,6 +2,8 @@
 
 **a distilled engine for creating RPC Servers/Clients**
 
+_work in progress_ 
+
 - Expose any kind of async api, including whole modules, remotely
 - Use any kind of transport layer that supports request/response semantics
 - Expose different versions of the same api using semver
