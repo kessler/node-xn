@@ -1,4 +1,4 @@
 'use strict'
 
-module.export.RpcServer = require('./lib/Server')
-module.export.RpcClient = require('./lib/Client')
+module.exports.RpcServer = require('./lib/Server')
+module.exports.RpcClient = require('./lib/Client')
