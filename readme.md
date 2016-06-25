@@ -63,6 +63,7 @@ For further examples see [this test](/test/integration.test.js)
 ## api
 
 **TODO**
+But for now, you can take a look at the documentation in the code.
 
 [//]: # (start marker for auto doc)
 
