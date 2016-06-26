@@ -27,6 +27,7 @@ describe('Server and Client', () => {
 
 			client.refresh((err, rpc) => {
 				if (err) return done(err)
+
 				expect(rpc).to.equal(client.rpc)
 				expect(client.rpc).to.have.property('fs')
 				

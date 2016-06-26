@@ -40,16 +40,16 @@ rep.on('message', (message, reply) => {
 // create the rpc client
 let client = new xn.RpcClient({
     send: (message, cb) => {
-        server.dispatch(message, (err, result) => {
-            req.send(message, cb) // integrate xn client with axon
-        })
+        req.send(message, cb) // integrate xn client with axon
     }
 })
 
-client.refresh((err) => {
+// expose the remote calls on a local object
+client.refresh((err, rpc) => {
     if (err) return done(err)
 
-    client.rpc.fs.writeFile(filename, 'test', (err) => {
+    // rpc === client.rpc
+    rpc.fs.writeFile(filename, 'test', (err) => {
         console.log(err ? err : 'success' )
     })
 })
