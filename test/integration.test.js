@@ -58,9 +58,7 @@ describe('Server and Client', () => {
 			// create the rpc client
 			let client = new Client({
 				send: (message, cb) => {
-					server.dispatch(message, (err, result) => {
-						req.send(message, cb)
-					})
+					req.send(message, cb)
 				}
 			})
 
