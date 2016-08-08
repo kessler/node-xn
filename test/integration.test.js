@@ -127,6 +127,29 @@ describe('Server and Client', () => {
 		})
 	})
 
+	it('expose instance of class', (done) => {
+		let server = new Server()
+		class Foo { bar(cb) { cb(null, 123)}}
+		let api = new Foo()
+
+		server.addApi('foo', '0.0.1', api)
+
+		let client = new Client({
+			send: (message, cb) => {
+				server.dispatch(message, cb)
+			}
+		})
+
+		client.refresh((err, rpc) => {
+			if (err) return done(err)
+			rpc.foo.bar((err, result) => {
+				if (err) return done(err)
+				expect(result).to.equal(123)
+				done()
+			})
+		})
+	})
+
 	beforeEach(() => {
 		try {
 			fs.unlinkSync(filename)

@@ -10,17 +10,28 @@ describe('Server', () => {
 
 	describe('can expose', () => {
 		it('objects as api', () => {
-			let api = { x: () => {} }
+			let api = { }
 
 			server.addApi(name, version, api)
 			expect(server.getApi(name, version)).to.equal(api)
 		})
 
 		it('objects with functions as api', () => {
-			let api = { }
+			let api = { x: () => {} }
 
 			server.addApi(name, version, api)
-			expect(server.getApi(name, version)).to.equal(api)
+			let actualApi = server.getApi(name, version)
+			expect(actualApi).to.equal(api)
+			expect(actualApi.x).to.be.instanceOf(Function)
+		})
+
+		it('instances of a class', () => {
+			class T { f() {}}
+			let api = new T()
+			server.addApi(name, version, api)
+			let actualApi = server.getApi(name, version)
+			expect(actualApi).to.equal(api)
+			expect(actualApi.f).to.be.instanceOf(Function)
 		})
 
 		it('functions as api', () => {
