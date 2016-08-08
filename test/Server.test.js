@@ -82,8 +82,7 @@ describe('Server', () => {
 
 			let message = {
 				apiName: name,
-				version: version,
-				methodName: 'x'
+				version: version
 			}
 
 			server.addApi(name, version, api)
