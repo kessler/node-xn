@@ -10,40 +10,54 @@ const http = require('http')
 const request = require('request')
 const concatStream = require('concat-stream')
 
+
+// server.requireApiModule('fs')
+// server.addApiFunction('meow', (arg, reply) => { reply(null, arg + ',foo') })
+// server.addApiConstant('bar', 1)
+// server.addApiModule('foo', { a: 1, b: (reply) => reply(null, 'bar') })
+
+
 describe('Server and Client', () => {
-	const filename = path.join(__dirname, 'test.txt')
 
 	describe('use fs module to write a file', () => {
-		it('connect client and server directly', (done) => {
-			let server = new Server()
-			
-			server.addModule('fs')
+		const TEST_FILE = path.join(__dirname, 'test.txt')
+		const EXPECTED_FILE_CONTENT = 'foobar'
+		
+		let server
 
-			let client = new Client({
-				send: (message, cb) => {
-					server.dispatch(message, cb)
-				}
-			})
-
+		function runFsTest(client, done) {
 			client.refresh((err, rpc) => {
 				if (err) return done(err)
 
 				expect(rpc).to.equal(client.rpc)
-				expect(client.rpc).to.have.property('fs')
-				
-				client.rpc.fs.writeFile(filename, 'test', (err) => {
+				expect(rpc).to.have.property('fs')
+				expect(Object.keys(rpc.fs)).to.deep.equal(Object.keys(require('fs')))
+
+				testFsWriteFile(rpc)
+			})
+
+			function testFsWriteFile(rpc) {
+				rpc.fs.writeFile(TEST_FILE, EXPECTED_FILE_CONTENT, (err) => {
 					if (err) return done(err)
 
-					expect(fs.readFileSync(filename, 'utf8')).to.equal('test')
+					let actual = fs.readFileSync(TEST_FILE, 'utf8')
+					expect(actual).to.equal(EXPECTED_FILE_CONTENT)
 					done()
 				})
+			}
+		}
+
+		it('connect client and server directly', (done) => {
+			let client = new Client({
+				send: (message, reply) => {
+					server.dispatch(message, reply)
+				}
 			})
+
+			runFsTest(client, done)
 		})
 
 		it('connect client and server via axon sockets', (done) => {
-			// create the rpc server
-			let server = new Server()			
-			server.addModule('fs')
 
 			// create the axon sockets
 			let rep = axon.socket('rep')
@@ -55,38 +69,26 @@ describe('Server and Client', () => {
 			rep.on('message', (message, reply) => {
 				server.dispatch(message, reply)
 			})
-			
+
 			// create the rpc client
 			let client = new Client({
-				send: (message, cb) => {
-					req.send(message, cb)
+				send: (message, reply) => {
+					req.send(message, reply)
 				}
 			})
 
-			client.refresh((err) => {
-				if (err) return done(err)
-
-				client.rpc.fs.writeFile(filename, 'test', (err) => {
-					if (err) return done(err)
-
-					expect(fs.readFileSync(filename, 'utf8')).to.equal('test')
-					done()
-				})
-			})
+			runFsTest(client, done)
 		})
 
 		it('connect client and server via http interface', (done) => {
-			// create the rpc server
-			let rpcServer = new Server()			
-			rpcServer.addModule('fs')
-
+			
 			function httpHandler(req, res) {
 				req.pipe(concatStream((body) => {
-					rpcServer.dispatch(JSON.parse(body), (err, result) => {
+					server.dispatch(JSON.parse(body), (err, result) => {
 						if (err) {
-							return res.end(JSON.stringify(err))
+							return done(err)
 						}
-					
+
 						res.end(JSON.stringify(result))
 					})
 				}))
@@ -99,14 +101,14 @@ describe('Server and Client', () => {
 				send: (message, cb) => {
 					let req = request.post('http://localhost:8000', (err, res, body) => {
 						if (err) return cb(err)
-						
+
 						let result
-						
+
 						if (body) {
 							result = JSON.parse(body)
 						}
 
-						cb(null, result)					
+						cb(null, result)
 					})
 
 					req.write(JSON.stringify(message))
@@ -114,25 +116,31 @@ describe('Server and Client', () => {
 				}
 			})
 
-			client.refresh((err) => {
-				if (err) return done(err)
+			runFsTest(client, done)
+		})
 
-				client.rpc.fs.writeFile(filename, 'test', (err) => {
-					if (err) return done(err)
+		beforeEach(() => {
+			try {
+				fs.unlinkSync(TEST_FILE)
+			} catch (e) {
+				if (e.code !== 'ENOENT') {
+					throw e
+				}
+			}
 
-					expect(fs.readFileSync(filename, 'utf8')).to.equal('test')
-					done()
-				})
-			})
+			server = new Server()
+
+			// override default property name filters
+			server.requireApiModule('fs', { startsWith: [] })
 		})
 	})
 
 	it('expose instance of class', (done) => {
 		let server = new Server()
-		class Foo { bar(cb) { cb(null, 123)}}
+		class Foo { bar(cb) { cb(null, 123) } }
 		let api = new Foo()
 
-		server.addApi('foo', '0.0.1', api)
+		server.addApiModule('foo', api, '0.0.1')
 
 		let client = new Client({
 			send: (message, cb) => {
@@ -150,11 +158,28 @@ describe('Server and Client', () => {
 		})
 	})
 
-	beforeEach(() => {
-		try {
-			fs.unlinkSync(filename)
-		} catch (e) {
-
+	it('expose a function', (done) => {
+		let server = new Server()
+		let api = (a, b, cb) => {
+			cb(null, a, b)
 		}
+
+		server.addApiFunction('foo', api, '0.0.1')
+
+		let client = new Client({
+			send: (message, cb) => {
+				server.dispatch(message, cb)
+			}
+		})
+
+		client.refresh((err, rpc) => {
+			if (err) return done(err)
+			rpc.foo(1, 2, (err, a, b) => {
+				if (err) return done(err)
+				expect(a).to.equal(1)
+				expect(b).to.equal(2)
+				done()
+			})
+		})
 	})
 })

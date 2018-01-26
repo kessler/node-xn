@@ -1,5 +1,3 @@
-'use strict'
-
 const expect = require('chai').expect
 const Server = require('../lib/Server')
 
@@ -10,26 +8,26 @@ describe('Server', () => {
 
 	describe('can expose', () => {
 		it('objects as api', () => {
-			let api = { }
+			let api = {}
 
-			server.addApi(name, version, api)
-			expect(server.getApi(name, version)).to.equal(api)
+			server.addApiModule(name, api, version)
+			expect(server.getApiArtifact(name, version)).to.equal(api)
 		})
 
 		it('objects with functions as api', () => {
 			let api = { x: () => {} }
 
-			server.addApi(name, version, api)
-			let actualApi = server.getApi(name, version)
+			server.addApiModule(name, api, version)
+			let actualApi = server.getApiArtifact(name, version)
 			expect(actualApi).to.equal(api)
 			expect(actualApi.x).to.be.instanceOf(Function)
 		})
 
 		it('instances of a class', () => {
-			class T { f() {}}
+			class T { f() {} }
 			let api = new T()
-			server.addApi(name, version, api)
-			let actualApi = server.getApi(name, version)
+			server.addApiModule(name, api, version)
+			let actualApi = server.getApiArtifact(name, version)
 			expect(actualApi).to.equal(api)
 			expect(actualApi.f).to.be.instanceOf(Function)
 		})
@@ -37,36 +35,36 @@ describe('Server', () => {
 		it('functions as api', () => {
 			let api = () => {}
 
-			server.addApi(name, version, api)
-			expect(server.getApi(name, version)).to.equal(api)
+			server.addApiFunction(name, api, version)
+			expect(server.getApiArtifact(name, version)).to.equal(api)
 		})
 
 		it('strings as api', () => {
 			let api = 'foo'
 
-			server.addApi(name, version, api)
-			expect(server.getApi(name, version)).to.equal(api)
+			server.addApiConstant(name, api, version)
+			expect(server.getApiArtifact(name, version)).to.equal(api)
 		})
 
 		it('numbers as api', () => {
 			let api = 42
 
-			server.addApi(name, version, api)
-			expect(server.getApi(name, version)).to.equal(api)
+			server.addApiConstant(name, api, version)
+			expect(server.getApiArtifact(name, version)).to.equal(api)
 		})
 
 		it('boolean as api', () => {
 			let api = false
 
-			server.addApi(name, version, api)
-			expect(server.getApi(name, version)).to.equal(api)
+			server.addApiConstant(name, api, version)
+			expect(server.getApiArtifact(name, version)).to.equal(api)
 		})
 
 		it('whole modules as api', () => {
 			let api = require('http')
 
-			server.addModule('http')
-			expect(server.getApi('http', server.defaultVersion())).to.equal(api)
+			server.requireApiModule('http')
+			expect(server.getApiArtifact('http')).to.equal(api)
 		})
 	})
 
@@ -77,10 +75,10 @@ describe('Server', () => {
 			let message = {
 				apiName: name,
 				version: version,
-				methodName: 'x'
+				propertyName: 'x'
 			}
 
-			server.addApi(name, version, api)
+			server.addApiModule(name, api, version)
 			server.dispatch(message, (err, result) => {
 				if (err) return done(err)
 				expect(result).to.equal('foo')
@@ -96,7 +94,7 @@ describe('Server', () => {
 				version: version
 			}
 
-			server.addApi(name, version, api)
+			server.addApiFunction(name, api, version)
 			server.dispatch(message, (err, result) => {
 				if (err) return done(err)
 				expect(result).to.equal('foo')
@@ -113,7 +111,7 @@ describe('Server', () => {
 					version: version
 				}
 
-				server.addApi(name, version, api)
+				server.addApiConstant(name, api, version)
 				server.dispatch(message, (err, result) => {
 					if (err) return done(err)
 					expect(result).to.equal('foo')
@@ -129,7 +127,7 @@ describe('Server', () => {
 					version: version
 				}
 
-				server.addApi(name, version, api)
+				server.addApiConstant(name, api, version)
 				server.dispatch(message, (err, result) => {
 					if (err) return done(err)
 					expect(result).to.equal(42)
@@ -145,7 +143,7 @@ describe('Server', () => {
 					version: version
 				}
 
-				server.addApi(name, version, api)
+				server.addApiConstant(name, api, version)
 				server.dispatch(message, (err, result) => {
 					if (err) return done(err)
 					expect(result).to.equal(false)
@@ -155,27 +153,26 @@ describe('Server', () => {
 		})
 	})
 
-	it('has a special __metadata__ api', (done) => {
+	it('has a special $metadata$ api', (done) => {
 		let server = new Server()
-		server.addModule('fs')
-		server.addApi('foo', '0.0.1', 42)
+		server.requireApiModule('fs', { startsWith: [] })
+		server.addApiConstant('foo', 42)
 
 		let message = {
-			apiName: '__metadata__',
+			apiName: '$metadata$',
 			version: '*',
-			methodName: 'getApis'
+			propertyName: 'getApis'
 		}
 
 		server.dispatch(message, (err, apis) => {
 			if (err) return done(err)
-
 			expect(apis).to.have.property('fs')
-			expect(apis.fs).to.eql(Object.keys(require('fs')))
+			expect(apis.fs.properties).to.eql(Object.keys(require('fs')))
 			done()
 		})
 	})
 
-	it.skip('replies with an error if apiName is missing', (done) => {
+	it.skip('replies with an error if api is missing', (done) => {
 
 	})
 

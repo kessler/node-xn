@@ -17,12 +17,21 @@ npm i --save xn axon
 ```
 
 ```js
-const xn = require('xn')
+const xn = require('./index')
 const axon = require('axon')
 
 // create the rpc server
-let server = new xn.RpcServer()           
-server.addModule('fs')
+let server = new xn.RpcServer()
+server.requireApiModule('fs')
+server.addApiFunction('moo', (a, reply) => {
+    reply(null, a + 'b')
+})
+
+let myApi = {
+    ping: reply => reply(null, 'pong'),
+    echo: (what, reply) => reply(null, what)
+}
+server.addApiModule('meow', myApi)
 
 // create the axon sockets
 let rep = axon.socket('rep')
@@ -32,13 +41,15 @@ rep.bind(3000)
 req.connect(3000)
 
 rep.on('message', (message, reply) => {
-    server.dispatch(message, reply) // integrate xn server with axon
+    // integrate xn server with axon
+    server.dispatch(message, reply)
 })
 
 // create the rpc client
 let client = new xn.RpcClient({
     send: (message, cb) => {
-        req.send(message, cb) // integrate xn client with axon
+        // integrate xn client with axon
+        req.send(message, cb)
     }
 })
 
@@ -47,24 +58,25 @@ client.refresh((err, rpc) => {
     if (err) return done(err)
 
     // rpc === client.rpc
-    rpc.fs.writeFile(filename, 'test', (err) => {
-        console.log(err ? err : 'success' )
+    rpc.fs.writeFile('myfile', 'test', (err) => {
+        console.log(err ? err : 'success')
     })
 })
 
 // it is possible to skip the refresh() stage and send an api call immediately:
-client.sendApiMethodCall('fs', '*', 'writeFile', ['test', 'test']
-                                        , (err) => { console.log(err ? err : 'success' )})
+let message = {
+    apiName: 'fs',
+    propertyName: 'writeFile',
+    args: ['myfile', 'test']
+}
+
+client.sendMessage(message, (err) => {
+    console.log(err ? err : 'success')
+})
 ```
 For further examples see [this test](/test/integration.test.js)
 
-## api (TBD)
-For now, you can take a look at the documentation in the code.
-
-[//]: # (start marker for auto doc)
-
-[//]: # (end marker for auto doc)
-
+## api 
 ## license
 
 [MIT](http://opensource.org/licenses/MIT) © yaniv kessler

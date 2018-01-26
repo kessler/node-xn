@@ -2,21 +2,26 @@
 
 const Client = require('../lib/Client')
 const expect = require('chai').expect
+const { METADATA_API_NAME } = require('../lib/Api')
 
 describe('Client', () => {
 	let client, adapter
 
-	it('send api calls WITH arguments', (done) => {
-		client.sendApiMethodCall('test', '*', 'foo', [], (err, result) => {
-			if (err) return done(err)
-			expect(result).to.equal('bar')
-			done()
-		})
-	})
+	it('send a message', (done) => {
+		let message = {
+			apiName: 'test',
+			propertyName: 'foo',
+			args: [1, 2, 3]
+		}
 
-	it('send api calls WITHOUT arguments', (done) => {
-		client.sendApiCall('test', '*', (err, result) => {
+		client.sendMessage(message, (err, result) => {
 			if (err) return done(err)
+
+			expect(adapter.message).to.have.property('args')
+			expect(adapter.message.args).to.deep.equal([1, 2, 3])
+			expect(adapter.message).to.have.property('apiName', 'test')
+			expect(adapter.message).to.have.property('propertyName', 'foo')
+
 			expect(result).to.equal('bar')
 			done()
 		})
@@ -52,22 +57,35 @@ describe('Client', () => {
 
 	class MockAdapter {
 		constructor() {
-			this.__metadata__ = {
-				foo: ['bar'],
-				boo: []
+			this.mockData = {
+				[METADATA_API_NAME]: {
+					type: 'ApiModule',
+					name: METADATA_API_NAME,
+					version: '0.2.1',
+					properties: ['getApis', '_findLatestVersion']
+				},
+				foo: {
+					type: 'ApiModule',
+					name: 'foo',
+					version: '0.0.1',
+					properties: ['bar']
+				},
+				boo: {
+					type: 'ApiFunction',
+					name: 'boo',
+					version: '0.0.1'
+				}
 			}
 		}
 
 		send(message, callback) {
-			if (message.apiName === '__metadata__') {
-				return setImmediate(() => {
-					callback(null, this.__metadata__)
-				})
-			}
 			this.message = message
-			setImmediate(() => {
-				callback(null, 'bar')
-			})
+			
+			if (message.apiName === METADATA_API_NAME && message.propertyName === 'getApis') {
+				return setImmediate(() => callback(null, this.mockData))
+			}
+
+			setImmediate(() => callback(null, 'bar'))
 		}
 	}
 })
